@@ -216,10 +216,9 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
     afficherGrille(p.grille);
     // IF YOU WANT TO DEBUG/TEST THE GAME,
     // COMMENT FROM HERE
-    printf("Pour placer un bateau, donnez l'adresse de la case de destination, puis\n"
-           "son orientation (h/v). Les batiments seront positionnés sur la droite de\n"
-           "la case donnée pour les placements horizontaux, et vers le base pour les \n"
-           "placements verticaux. Exemple : a10v\n\n");
+    printf("Pour placer un bateau, tapez la coordonnée verticale (lettre) , puis\n"
+           "tapez la coordonnée horizontale (chiffre), puis taper l'orientation horizontale ou verticale (h ou v)\n\n"
+    );
     printf("Veuillez placer le %s (%i cases)\n\n", nom, size);
     do {
         // Re-init vars
