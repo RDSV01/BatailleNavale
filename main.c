@@ -235,19 +235,19 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
         //		printf("x: %i, y: %i, o: %c\n", c.x, c.y, c.d);
 
         if (c.x < 0 || c.y < 0 || c.x > BOARD_SIZE || c.y > BOARD_SIZE) {
-            puts(" > Mauvaises coordonnées...");
+            puts(" > Coordonnées incorectes.");
             error = 1;
         } else if (c.d == 'v') {// Vérification placement des bateaux
             strcpy(orientation, "vertical");
             // Sortie de carte
             if (c.y + size > BOARD_SIZE) {
-                printf(" > Vous ne pouvez pas placer votre bateau ici. Il sortirait de la carte...(y=%i)\n", c.y);
+                printf(" > Impossible de placer le bateau ici. Il sort du cadre.(y=%i)\n", c.y);
                 error = 1;
             } else {
                 // Chevauchements
                 for (i = c.y; i < c.y + size; i++) {
                     if (p.grille[i][c.x] != C_EAU) {
-                        puts(" > Il y a déjà un bateau ici...");
+                        puts(" > Un bateau est déja ici.");
                         error = 1;
 
                         break;
@@ -255,13 +255,13 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
                 }
             }
         } else if (c.x + size > BOARD_SIZE) {
-            printf(" > Vous ne pouvez pas placer votre bateau ici. Il sortirait de la carte...(x=%i)\n", c.x);
+            printf(" > Impossible de placer le bateau ici. Il sort du cadre.(x=%i)\n", c.x);
             error = 1;
         } else {
             // Chevauchements
             for (i = c.x; i < c.x + size; i++) {
                 if (p.grille[c.y][i] != C_EAU) {
-                    puts(" > Il y a déjà un bateau ici...");
+                    puts(" > Un bateau est déja ici.");
                     error = 1;
 
                     break;
@@ -271,7 +271,7 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
 
         if (error == 0) {
             getchar();
-            printf("Placement %s en %c:%i. Est-ce correct ? [o/N] ", orientation, c.y + 'a', c.x + 1);
+            printf("Placement %s en %c:%i. Valider ce placement ? [o/n] ", orientation, c.y + 'a', c.x + 1);
             reponse = getchar();
             if (reponse == 'o' || reponse == 'O') {
                 done = 1;
@@ -326,7 +326,7 @@ InfosServer initialisationServeur(int port) {
     // Creation du socket
     is.socket_desc = socket(AF_INET, SOCK_STREAM, 0);
     if (is.socket_desc == -1) {
-        fermerApp(is, 1, "Impossible de créer le socket.");
+        fermerApp(is, 1, "Creation socket impossible.");
     }
 
     // Création de l'écoute
@@ -336,12 +336,12 @@ InfosServer initialisationServeur(int port) {
 
     // Mise en place de l'écoute
     if (bind(is.socket_desc, (struct sockaddr *) &is.server, sizeof (is.server)) < 0) {
-        fermerApp(is, 1, "Erreur de la mise en place de l'écoute.");
+        fermerApp(is, 1, "Erreur écoute");
     }
 
     listen(is.socket_desc, 3);
 
-    printf("Serveur en place (port %i). En attente de client...\n", port);
+    printf("Serveur en place (port %i). Attente du client...\n", port);
     is.c = sizeof (struct sockaddr_in);
 
     return is;
@@ -361,12 +361,12 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
     // Acceptation de la connexion d'un client
     is.client_sock = accept(is.socket_desc, (struct sockaddr *)&is.client, (socklen_t *)&is.c);
     if (is.client_sock < 0) {
-        perror("Connexion entrante refusee");
+        perror("Connexion refusee");
         return 1;
     }
 
     printf("\n-------------------------------------\n");
-    printf("En attente du coup de l'adversaire...\n");
+    printf("En attente du tir de l'adversaire.\n");
     // Avant la boucle while
 #define MAX_MESSAGE_SIZE 100
     char server_response[MAX_MESSAGE_SIZE + 1];  // +1 pour le caractère nul de fin de chaîne
@@ -431,9 +431,9 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
         printf("Résultat :\n");
         printf("----------\n");
         afficherGrille((*p).grille);
-        printf(ANSI_COLOR_BLUE "\nIl vous reste %i points...\n" ANSI_COLOR_RESET, calcAlive(*p));
+        printf(ANSI_COLOR_BLUE "\nIl vous reste %i points.\n" ANSI_COLOR_RESET, calcAlive(*p));
         if (calcAlive(*p) == 0) {
-            printf(ANSI_COLOR_RED"...Vous n'avez plus de bateaux. Vous avez perdu. Mince. Dommage...\n" ANSI_COLOR_RESET);
+            printf(ANSI_COLOR_RED"Plus de bateaux. Perdu..\n" ANSI_COLOR_RESET);
             sprintf(server_response, "%d", S_PERDU);
         }
 
@@ -447,10 +447,10 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
     }
 
     if (is.read_size == 0) {
-        puts("Déconnexion du client");
+        puts("Déconnexion client");
         fflush(stdout);
     } else if (is.read_size == -1) {
-        perror("Erreur lors de la réception");
+        perror("Erreur réception");
     }
 
     return status;
@@ -471,19 +471,19 @@ int initClient(int port) {
     //Creation du socket
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
-        printf("erreur à la création du socket");
+        printf("Erreur création socket");
     }
-    puts("Socket en service");
+    puts("Socket OK");
 
     server.sin_addr.s_addr = inet_addr(CLIENT_ADDR); //définition de l'adresse IP du serveur
     server.sin_family = AF_INET;
     server.sin_port = htons(port); //définition du port d'écoute du serveur
 
-    puts("En attente de l'autre joueur...");
+    puts("En attente du deuxième joueur");
     while (connect(sock, (struct sockaddr *) &server, sizeof (server)) < 0) {
     }
 
-    puts("Connexion etablie\n");
+    puts("Connexion OK\n");
 
     return 0;
 }
@@ -500,7 +500,7 @@ int connexionServeur(int server_port, int wait) {
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
-        printf("erreur à la création du socket");
+        printf("Erreur création socket");
     }
 
     // Connexion au serveur
@@ -510,7 +510,7 @@ int connexionServeur(int server_port, int wait) {
 
     if (wait == 0) {
         if (connect(sock, (struct sockaddr *) &server, sizeof (server)) < 0) {
-            puts("Le serveur n'est pas accessible.");
+            puts("Serveur inacessible");
             return -1;
         }
     } else {
@@ -539,21 +539,21 @@ int strike(int other_port, Plateau *p) {
     printf("\nGrille de l'adversaire :\n");
     printf("------------------------\n");
     afficherGrille((*p).grilleEnnemie);
-    printf("\nA vous de jouer !\n");
-    printf("Entrez les coordonnées à frapper (ex: a1) : ");
+    printf("\nA votre tour !\n");
+    printf("Entrez les coordonnées pour tirer (ex: a1) : ");
     scanf("%3s", message); // Limiter la lecture à 3 caractères
 
     c = strToCoord(message, 0);
 
     // Envoi de la chaine saisie par l'utilisateur
     if (send(sock, message, strlen(message), 0) < 0) {
-        puts("erreur lors de l'envoi");
+        puts("erreur envoi");
         return -1;
     }
 
     // Réception du message de retour du serveur
     if (recv(sock, server_reply, sizeof(server_reply) - 1, 0) < 0) {
-        puts("erreur lors de la reception de la reponse serveur");
+        puts("Erreur reception reponse serveur");
         return -1;
     } else {
         server_reply[3] = '\0'; // Ajouter le caractère de fin de chaîne
@@ -563,11 +563,11 @@ int strike(int other_port, Plateau *p) {
 
         switch (srvR) {
             case S_MANQUE:
-                printf(ANSI_COLOR_BLUE " > Dans l'eau...\n" ANSI_COLOR_RESET);
+                printf(ANSI_COLOR_BLUE " > Dans l'eau.\n" ANSI_COLOR_RESET);
                 (*p).grilleEnnemie[c.y][c.x] = C_EAU_T;
                 break;
             case S_TOUCHE:
-                printf(ANSI_COLOR_GREEN " > Touché...\n" ANSI_COLOR_RESET);
+                printf(ANSI_COLOR_GREEN " > Touché.\n" ANSI_COLOR_RESET);
                 (*p).grilleEnnemie[c.y][c.x] = C_BAT_T;
                 break;
             case S_COULE:
@@ -575,17 +575,15 @@ int strike(int other_port, Plateau *p) {
                 (*p).grilleEnnemie[c.y][c.x] = C_BAT_T;
                 break;
             case S_TOUCHE_BIS:
-                printf(ANSI_COLOR_BLUE " ! Vous avez déjà touché ici...\n" ANSI_COLOR_RESET);
+                printf(ANSI_COLOR_BLUE " Vous avez déjà touché ici.\n" ANSI_COLOR_RESET);
                 break;
             case S_PERDU:
                 printf(ANSI_COLOR_GREEN);
-                printf("=============================\n\n");
                 printf("  Vous avez gagné ! Bravo !\n");
-                printf("=============================\n\n");
                 printf(ANSI_COLOR_RESET);
                 break;
             default:
-                printf(ANSI_COLOR_RED " ! Réponse incompréhensible. (%i)\n" ANSI_COLOR_RESET, srvR);
+                printf(ANSI_COLOR_RED " ! Réponse incorrecte. (%i)\n" ANSI_COLOR_RESET, srvR);
                 return -1; // Retourner une erreur si la réponse est incompréhensible
         }
 
@@ -604,24 +602,24 @@ void handshake(int port) {
 
     sprintf(message, "%d", S_HANDSHAKE);
 
-    printf("En attente de l'autre joueur...\n");
+    printf("En attente du deuxième joueur.\n");
 
     sock = connexionServeur(port, 1);
     //Envoi du code de poignée de main
 
     if (send(sock, message, msgSize, 0) < 0) {
-        puts("Erreur lors de l'envoi de la poignée de main");
+        puts("Erreur handshake");
     }
 
     //Réception du message de retour du serveur
     if (recv(sock, server_reply, msgSize, 0) < 0) {
-        puts("Erreur lors de la reception de la reponse serveur");
+        puts("Erreur reception reponse serveur");
     } else {
         srvV = strtol(server_reply, NULL, 10);
         if (srvV != S_HANDSHAKE) {
-            printf("Réponse du serveur inconnue (%i)\n", srvV);
+            printf("Réponse du serveur (%i)\n", srvV);
         } else {
-            printf("Connecté à l'autre joueur\n");
+            printf("Connecté au second joueur\n");
         }
     }
     close(sock);
@@ -637,11 +635,11 @@ int attente_handshake(InfosServer is) {
     char resp[2 + 1];
     sprintf(resp, "%d", S_HANDSHAKE);
 
-    printf("En attente de l'autre joueur...\n");
+    printf("En attente du deuxième joueur.\n");
     // Acceptation de la connexion d'un client
     is.client_sock = accept(is.socket_desc, (struct sockaddr *) &is.client, (socklen_t*) & is.c);
     if (is.client_sock < 0) {
-        perror("Connexion entrante refusee");
+        perror("Connexion refusee");
         return 1;
     }
 
@@ -650,7 +648,7 @@ int attente_handshake(InfosServer is) {
         content = strtol(is.client_message, NULL, 10);
         if (content == S_HANDSHAKE) {
             write(is.client_sock, resp, sizeof (int));
-            printf("Connecté à l'autre joueur...\n");
+            printf("Connecté au deuxieme joueur.\n");
         }
     }
 }
@@ -668,7 +666,7 @@ int main() {
     /*
      * Saisie du type d'instance.
      */
-    printf("Joueur 1 ou 2 ? [1/2] > ");
+    printf("Selectionner votre joueur, joueur 1 ou 2 ? [1/2] > ");
     scanf("%i", &t);
 
     if (t == 1) {
@@ -709,9 +707,7 @@ int main() {
     //	plateau = placeShip(plateau, "sous-marin", B_SOUS_MARIN, C_SOUS_MARIN, "a4v");
     //	plateau = placeShip(plateau, "torpilleur", B_TORPILLEUR, C_TORPILLEUR, "a5v");
 
-    printf("\n==============================================================\n");
-    printf(" Et c'est parti !");
-    printf("\n==============================================================\n");
+    printf(" C'est parti !");
 
     status = S_TOUCHE;
     // Décalage entre joueur 1 et 2
