@@ -1,33 +1,3 @@
-/**
- * BATAILLE NAVALE
- * ---------------
- *
- * Author : Manuel Tancoigne
- * Date : finished on 2016/09/20
- * License : MIT
- *
- * Notes:
- * ------
- * This game was an exercise. It works on a local computer (may be playable on
- * a network with a bit of hacking).
- * The two instances uses a different port, SRV_PORT and CLT_PORT. When the game
- * starts, the user have to choose between player 1 and 2. If he chooses 1, his
- * instance of the game will use the SRV_PORT. Else, it will be the CLT_PORT.
- *
- * If you want to test it but are not patient enough to place the boats for both
- * instances, comment out the specified lines in placeShip() and in main(),
- * that will place the boats vertically on the board, starting from a1, a2, etc.
- *
- * This game uses Linux sockets, so it won't run on windows.
- *
- * If the game crashes because ports are already taken, change the SRV_PORT and
- * CLT_PORT values and recompile.
- *
- * Last thing, all the strings are hardcoded in french, and I mixed comments
- * with english and french, as for variables, function names and constants.
- * Don't blame me too much for that, I started at school and finished at home :)
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -145,22 +115,15 @@ Coordonnees strToCoord(char string[], int hasDirection) {
 /**
  * @brief Affiche un beau logo
  */
-void logo() {
-    printf(ANSI_COLOR_GREEN);
-    printf(" ____        _        _ _ _                               _      \n");
-    printf("| __ )  __ _| |_ __ _(_) | | ___   _ __   __ ___   ____ _| | ___ \n");
-    printf("|  _ \\ / _` | __/ _` | | | |/ _ \\ | '_ \\ / _` \\ \\ / / _` | |/ _ \\\n");
-    printf("| |_) | (_| | || (_| | | | |  __/ | | | | (_| |\\ V / (_| | |  __/\n");
-    printf("|____/ \\__,_|\\__\\__,_|_|_|_|\\___| |_| |_|\\__,_| \\_/ \\__,_|_|\\___|\n\n");
-    printf(ANSI_COLOR_BLUE"        _     _     _ " ANSI_COLOR_RESET "__-=-//__  __\\\\-=-__" ANSI_COLOR_BLUE " _     _     _        \n" ANSI_COLOR_RESET);
-    printf(ANSI_COLOR_BLUE".-.,.-'`(,.-'`(,.-'`(," ANSI_COLOR_RESET "\\_______/" ANSI_COLOR_BLUE ".." ANSI_COLOR_RESET "\\_______/" ANSI_COLOR_BLUE ",)`'-.,)`'-.,)`'-.,¸.-.\n\n" ANSI_COLOR_RESET);
+void bienvenu() {
+    printf("Bienvenu sur le jeu de la Bataile Navale\n");
 }
 
 /**
  * Initialise un plateau vierge
  * @return Plateau initialisé
  */
-Plateau initPlateau() {
+Plateau initialisationJeu() {
     Plateau p;
     int i, j;
     p.contreTorpilleur = B_CONTRE_TORPILLEUR;
@@ -701,7 +664,7 @@ int wait_handshake(InfosServer is) {
 int main() {
     int t, self_port, other_port, status, perdu;
 
-    logo();
+    bienvenu();
 
     /*
      * Saisie du type d'instance.
@@ -726,7 +689,7 @@ int main() {
      * Création de la partie
      */
     // Génération de la grille
-    Plateau plateau = initPlateau();
+    Plateau plateau = initialisationJeu();
 
     printf("Placement de vos bateaux\n");
     printf("------------------------\n");
