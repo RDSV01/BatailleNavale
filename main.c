@@ -206,7 +206,7 @@ int calcAlive(Plateau p) {
 //Plateau placeShip(Plateau p, char nom[], int size, int val, char debugC[4 + 1]) {
 // Normal functiond declaration
 
-Plateau placeShip(Plateau p, char nom[], int size, int val) {
+Plateau placerBateau(Plateau p, char nom[], int size, int val) {
     int done, error, i;
     Coordonnees c;
     char pos[4 + 1], // Coordonnées
@@ -303,7 +303,7 @@ Plateau placeShip(Plateau p, char nom[], int size, int val) {
  * @param code Error code (or 0)
  * @param message Message to display
  */
-void closeApp(InfosServer is, int code, char message[50]) {
+void fermerApp(InfosServer is, int code, char message[50]) {
     // Closes sockets
     close(is.socket_desc);
     close(is.client_sock);
@@ -321,13 +321,13 @@ void closeApp(InfosServer is, int code, char message[50]) {
  * @param port Port on wich to listen
  * @return Server informations
  */
-InfosServer initServer(int port) {
+InfosServer initialisationServeur(int port) {
     InfosServer is;
 
     // Creation du socket
     is.socket_desc = socket(AF_INET, SOCK_STREAM, 0);
     if (is.socket_desc == -1) {
-        closeApp(is, 1, "Impossible de créer le socket.");
+        fermerApp(is, 1, "Impossible de créer le socket.");
     }
 
     // Création de l'écoute
@@ -337,7 +337,7 @@ InfosServer initServer(int port) {
 
     // Mise en place de l'écoute
     if (bind(is.socket_desc, (struct sockaddr *) &is.server, sizeof (is.server)) < 0) {
-        closeApp(is, 1, "Erreur de la mise en place de l'écoute.");
+        fermerApp(is, 1, "Erreur de la mise en place de l'écoute.");
     }
 
     listen(is.socket_desc, 3);
@@ -495,7 +495,7 @@ int initClient(int port) {
  * @param wait Set it to 0 to wait for server to be ready, 0 otherwise
  * @return
  */
-int connexionServer(int server_port, int wait) {
+int connexionServeur(int server_port, int wait) {
     struct sockaddr_in server;
     int sock;
 
@@ -532,7 +532,7 @@ int strike(int other_port, Plateau *p) {
     Coordonnees c;
 
     // Creation du socket
-    sock = connexionServer(other_port, 0);
+    sock = connexionServeur(other_port, 0);
 
     /*
      * "Interface graphique"
@@ -607,7 +607,7 @@ void handshake(int port) {
 
     printf("En attente de l'autre joueur...\n");
 
-    sock = connexionServer(port, 1);
+    sock = connexionServeur(port, 1);
     //Envoi du code de poignée de main
 
     if (send(sock, message, msgSize, 0) < 0) {
@@ -633,7 +633,7 @@ void handshake(int port) {
  * @param is
  * @return
  */
-int wait_handshake(InfosServer is) {
+int attente_handshake(InfosServer is) {
     int content;
     char resp[2 + 1];
     sprintf(resp, "%d", S_HANDSHAKE);
@@ -683,7 +683,7 @@ int main() {
     /*
      * Initialisation du serveur
      */
-    InfosServer srv = initServer(self_port);
+    InfosServer srv = initialisationServeur(self_port);
 
     /*
      * Création de la partie
@@ -697,11 +697,11 @@ int main() {
     // Placement des bateaux
 
     // COMMENT THIS IF YOU WANT TO DEBUG/TEST THE GAME
-    plateau = placeShip(plateau, "porte avions", B_PORTE_AVION, C_PORTE_AVION);
-    plateau = placeShip(plateau, "croiseur", B_CROISEUR, C_CROISEUR);
-    plateau = placeShip(plateau, "contre-torpilleur", B_CONTRE_TORPILLEUR, C_CONTRE_TORPILLEUR);
-    plateau = placeShip(plateau, "sous-marin", B_SOUS_MARIN, C_SOUS_MARIN);
-    plateau = placeShip(plateau, "torpilleur", B_TORPILLEUR, C_TORPILLEUR);
+    plateau = placerBateau(plateau, "porte avions", B_PORTE_AVION, C_PORTE_AVION);
+    plateau = placerBateau(plateau, "croiseur", B_CROISEUR, C_CROISEUR);
+    plateau = placerBateau(plateau, "contre-torpilleur", B_CONTRE_TORPILLEUR, C_CONTRE_TORPILLEUR);
+    plateau = placerBateau(plateau, "sous-marin", B_SOUS_MARIN, C_SOUS_MARIN);
+    plateau = placerBateau(plateau, "torpilleur", B_TORPILLEUR, C_TORPILLEUR);
 
     // UNCOMMENT THIS IF YOU WANT TO DEBUG/TEST the thing
     //	plateau = placeShip(plateau, "porte avions", B_PORTE_AVION, C_PORTE_AVION, "a1v");
@@ -718,7 +718,7 @@ int main() {
     // Décalage entre joueur 1 et 2
     if (t == 1) {
         // Mode "écoute"
-        wait_handshake(srv);
+        attente_handshake(srv);
         afficherGrille(plateau.grille);
         while (status != S_PERDU) {
             // Tant que l'autre touche
@@ -747,7 +747,7 @@ int main() {
         }
     }
 
-    closeApp(srv, 0, "Bye.");
+    fermerApp(srv, 0, "Bye.");
 
     return (EXIT_SUCCESS);
 }
