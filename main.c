@@ -12,7 +12,7 @@
 #define BOARD_SIZE 10
 #define S_PERDU -1 // Partie perdue
 #define S_TOUCHE 1 // Bateau touché
-#define S_MANQUE 2 // Bateau manqué
+#define S_RATE 2 // Bateau manqué
 #define S_TOUCHE_BIS 3 // Bateau touché
 #define S_COULE 4 //Bateau coulé.
 #define S_HANDSHAKE 10 // Code de poignée de main
@@ -83,34 +83,36 @@ typedef struct {
 } Coordonnees;
 
 Coordonnees strToCoord(char string[], int hasDirection) {
-    Coordonnees c;
-    char strX[2 + 1];
+    Coordonnees c;  // Structure pour stocker les coordonnées
+    char strX[2 + 1];  // Chaîne pour stocker la composante X
     int i;
 
-    // Protect hasDirection range
+    // Protéger la plage de la variable hasDirection
     if (hasDirection > 0) {
         hasDirection = 1;
-        c.d = string[strlen(string) - 1];
+        c.d = string[strlen(string) - 1];  // Stocker la direction
     } else {
         hasDirection = 0;
     }
 
-    // Split the string
-    c.y = string[0] - 'a';
-    //	printf("Debug strX- lg: %i, iMax: %i, str: %s ", (int) strlen(string), (int) strlen(string)-(1 + hasDirection), string);
+    // Séparer la chaîne
+    c.y = string[0] - 'a';  // Convertir la composante Y en entier
+
+    // Parcourir la chaîne pour extraire la composante X
     for (i = 0; i < strlen(string)-(1 + hasDirection); i++) {
         strX[i] = string[i + 1];
     }
-    // Filling up (had trouble to get a clean string.)
+
+    // Remplir la chaîne (problème pour obtenir une chaîne propre)
     for (i + 1; i < strlen(strX); i++) {
         strX[i] = '\0';
     }
-    //	printf("strX: %s\n", strX);
 
-    c.x = strtol(strX, NULL, 10) - 1;
+    c.x = strtol(strX, NULL, 10) - 1;  // Convertir la composante X en entier
 
-    return c;
+    return c;  // Retourner les coordonnées
 }
+
 
 /**
  * @brief Affiche un beau logo
@@ -160,13 +162,13 @@ B |   |   |   |   |   |   |   |   |   |   |
 ... J
      */
     puts("\n  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10|");
-    puts(line);
+    puts(line);  // Afficher la ligne de séparation
     for (i = 0; i < BOARD_SIZE; i++) {
-        printf("%c |", i + 'A');
+        printf("%c |", i + 'A');  // Afficher la lettre de la rangée
         for (j = 0; j < BOARD_SIZE; j++) {
-            if ((int) g[i][j] == C_EAU) { // Dans l'eau
+            if ((int) g[i][j] == C_EAU) {  // Dans l'eau
                 printf("%s", EAU);
-            } else if (g[i][j] == C_EAU_T) { // Eau, touché
+            } else if (g[i][j] == C_EAU_T) {  // Eau, touché
                 printf("%s", EAU_T);
             } else if (// Bateau
                     g[i][j] == C_PORTE_AVION ||
@@ -181,9 +183,10 @@ B |   |   |   |   |   |   |   |   |   |   |
             }
         }
         printf("\n");
-        puts(line);
+        puts(line);  // Afficher la ligne de séparation
     }
 }
+
 
 /**
  * Retourne le nombre de cellules encore vivantes
@@ -202,68 +205,60 @@ int calcAlive(Plateau p) {
  * @param size Ship size
  * @param val Untouched ship value
  */
-// Function declaration for testing
-//Plateau placeShip(Plateau p, char nom[], int size, int val, char debugC[4 + 1]) {
-// Normal functiond declaration
 
 Plateau placerBateau(Plateau p, char nom[], int size, int val) {
     int done, error, i;
     Coordonnees c;
-    char pos[4 + 1], // Coordonnées
+    char pos[4 + 1],  // Coordonnées
     orientation[10 + 1],
             reponse;
 
     afficherGrille(p.grille);
-    // IF YOU WANT TO DEBUG/TEST THE GAME,
-    // COMMENT FROM HERE
-    printf("Pour placer un bateau, tapez la coordonnée verticale (lettre) , puis\n"
-           "tapez la coordonnée horizontale (chiffre), puis taper l'orientation horizontale ou verticale (h ou v)\n\n"
+
+    printf("Pour placer un bateau, tapez la coordonnée verticale (lettre), puis\n"
+           "tapez la coordonnée horizontale (chiffre), puis tapez l'orientation horizontale ou verticale (h ou v)\n\n"
     );
     printf("Veuillez placer le %s (%i cases)\n\n", nom, size);
     do {
-        // Re-init vars
+        // Réinitialiser les variables
         error = 0;
         done = 0;
         strcpy(orientation, "horizontal");
 
-        // Ask for coordinates
+        // Demander les coordonnées
         printf("Position : ");
         scanf("%s", pos);
 
         c = strToCoord(pos, 1);
 
-        //		printf("x: %i, y: %i, o: %c\n", c.x, c.y, c.d);
-
         if (c.x < 0 || c.y < 0 || c.x > BOARD_SIZE || c.y > BOARD_SIZE) {
-            puts(" > Coordonnées incorectes.");
+            puts(" > Coordonnées incorrectes.");
             error = 1;
-        } else if (c.d == 'v') {// Vérification placement des bateaux
+        } else if (c.d == 'v') {  // Vérification du placement des bateaux
             strcpy(orientation, "vertical");
-            // Sortie de carte
+            // Sortie de la carte
             if (c.y + size > BOARD_SIZE) {
-                printf(" > Impossible de placer le bateau ici. Il sort du cadre.(y=%i)\n", c.y);
+                printf(" > Impossible de placer le bateau ici. Il sort du cadre. (y=%i)\n", c.y);
                 error = 1;
             } else {
                 // Chevauchements
                 for (i = c.y; i < c.y + size; i++) {
                     if (p.grille[i][c.x] != C_EAU) {
-                        puts(" > Un bateau est déja ici.");
+                        puts(" > Un bateau est déjà ici.");
                         error = 1;
-
                         break;
                     }
                 }
             }
         } else if (c.x + size > BOARD_SIZE) {
-            printf(" > Impossible de placer le bateau ici. Il sort du cadre.(x=%i)\n", c.x);
+            printf(" > Impossible de placer le bateau ici. Il sort du cadre. (x=%i)\n", c.x);
             error = 1;
         } else {
             // Chevauchements
             for (i = c.x; i < c.x + size; i++) {
                 if (p.grille[c.y][i] != C_EAU) {
-                    puts(" > Un bateau est déja ici.");
+                    puts(" > Un bateau est déjà ici.");
                     error = 1;
-
                     break;
                 }
             }
@@ -278,11 +273,9 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
             }
         }
     } while (done == 0);
-    // TO HERE ///////////////////////////////////////////////////////////////////
-    // AND UNCOMMENT THIS LINE
-    //	c = strToCoord(debugC, 1);
 
-    // Place ship on grid
+
+    // Placer le bateau sur la grille
     if (c.d == 'v') {
         for (i = c.y; i < c.y + size; i++) {
             p.grille[i][c.x] = val;
@@ -295,6 +288,7 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
     return p;
 }
 
+
 /**
  * Closes all opened sockets, displays a message and exits the app with a given
  * code.
@@ -303,20 +297,18 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
  * @param message Message to display
  */
 void fermerApp(InfosServer is, int code, char message[50]) {
-    // Closes sockets
+    // Fermer les sockets
     close(is.socket_desc);
     close(is.client_sock);
 
-    // Display message
+    // Message
     printf("\n%s\n", message);
 
-    // Exit
+    //Fermeture
     exit(code);
 }
 
 /**
- * Initializes the server
- *
  * @param port Port on wich to listen
  * @return Server informations
  */
@@ -348,36 +340,33 @@ InfosServer initialisationServeur(int port) {
 }
 
 /**
- * Ecoute sur le port du serveur pour un message entrant.
- *
  * @param is Infos serveur/client.
  * @return 0 on success, 1 on error.
  */
 int receptionMessageClient(InfosServer is, Plateau *p) {
-
     int content, status = 0, pv = -1;
     Coordonnees coup;
 
-    // Acceptation de la connexion d'un client
+    // Acceptation de la connexion client
     is.client_sock = accept(is.socket_desc, (struct sockaddr *)&is.client, (socklen_t *)&is.c);
     if (is.client_sock < 0) {
-        perror("Connexion refusee");
+        perror("Connexion refusée");
         return 1;
     }
 
     printf("\n-------------------------------------\n");
     printf("En attente du tir de l'adversaire.\n");
-    // Avant la boucle while
-#define MAX_MESSAGE_SIZE 100
-    char server_response[MAX_MESSAGE_SIZE + 1];  // +1 pour le caractère nul de fin de chaîne
 
+    // Définition de la taille maximale des messages
+#define MAX_MESSAGE_SIZE 100
+    char server_response[MAX_MESSAGE_SIZE + 1]; // +1 pour le caractère nul de fin de chaîne
 
     while ((is.read_size = recv(is.client_sock, is.client_message, 100, 0)) > 0) {
         // À l'intérieur de la boucle while
         size_t message_length = strlen(is.client_message);
         size_t copy_length = message_length < MAX_MESSAGE_SIZE ? message_length : MAX_MESSAGE_SIZE;
         strncpy(server_response, is.client_message, copy_length);
-        server_response[copy_length] = '\0';  // Assurez-vous que la chaîne est terminée correctement
+        server_response[copy_length] = '\0'; // S'assurer que la chaîne est terminée correctement
 
         printf(ANSI_COLOR_BLUE " > %s\n\n" ANSI_COLOR_RESET, is.client_message);
 
@@ -385,9 +374,9 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
         content = (*p).grille[coup.y][coup.x];
 
         if (content == C_EAU || content == C_EAU_T) {
-            sprintf(server_response, "%d", S_MANQUE);
+            sprintf(server_response, "%d", S_RATE);
             (*p).grille[coup.y][coup.x] = C_EAU_T;
-            status = S_MANQUE;
+            status = S_RATE;
         } else {
             status = S_TOUCHE;
             sprintf(server_response, "%d", S_TOUCHE);
@@ -419,7 +408,7 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
                     break;
                 default:
                     sprintf(server_response, "%d", S_TOUCHE_BIS);
-                    status = S_MANQUE;
+                    status = S_RATE;
             }
         }
 
@@ -433,7 +422,7 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
         afficherGrille((*p).grille);
         printf(ANSI_COLOR_BLUE "\nIl vous reste %i points.\n" ANSI_COLOR_RESET, calcAlive(*p));
         if (calcAlive(*p) == 0) {
-            printf(ANSI_COLOR_RED"Plus de bateaux. Perdu..\n" ANSI_COLOR_RESET);
+            printf(ANSI_COLOR_RED "Plus de bateaux. Perdu..\n" ANSI_COLOR_RESET);
             sprintf(server_response, "%d", S_PERDU);
         }
 
@@ -454,38 +443,6 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
     }
 
     return status;
-}
-
-
-
-/**
- * Initialise le client
- *
- * @param port Port du serveur (autre joueur)
- * @return 0 on success, 1 on error.
- */
-int initClient(int port) {
-    int sock;
-    struct sockaddr_in server;
-
-    //Creation du socket
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock == -1) {
-        printf("Erreur création socket");
-    }
-    puts("Socket OK");
-
-    server.sin_addr.s_addr = inet_addr(CLIENT_ADDR); //définition de l'adresse IP du serveur
-    server.sin_family = AF_INET;
-    server.sin_port = htons(port); //définition du port d'écoute du serveur
-
-    puts("En attente du deuxième joueur");
-    while (connect(sock, (struct sockaddr *) &server, sizeof (server)) < 0) {
-    }
-
-    puts("Connexion OK\n");
-
-    return 0;
 }
 
 /**
@@ -522,7 +479,7 @@ int connexionServeur(int server_port, int wait) {
 }
 
 /**
- * Envoie un message au serveur et affiche la réponse de ce dernier.
+ * Envoie un message au serveur et affiche la réponse.
  * @return 0 on success, 1 on error
  */
 int strike(int other_port, Plateau *p) {
@@ -533,9 +490,7 @@ int strike(int other_port, Plateau *p) {
     // Creation du socket
     sock = connexionServeur(other_port, 0);
 
-    /*
-     * "Interface graphique"
-     */
+    // Interface
     printf("\nGrille de l'adversaire :\n");
     printf("------------------------\n");
     afficherGrille((*p).grilleEnnemie);
@@ -562,8 +517,8 @@ int strike(int other_port, Plateau *p) {
         printf("----------\n");
 
         switch (srvR) {
-            case S_MANQUE:
-                printf(ANSI_COLOR_BLUE " > Dans l'eau.\n" ANSI_COLOR_RESET);
+            case S_RATE:
+                printf(ANSI_COLOR_BLUE " > Raté.\n" ANSI_COLOR_RESET);
                 (*p).grilleEnnemie[c.y][c.x] = C_EAU_T;
                 break;
             case S_TOUCHE:
@@ -596,34 +551,39 @@ int strike(int other_port, Plateau *p) {
  * @param port
  */
 void handshake(int port) {
-    int sock, msgSize = (sizeof (char)*3);
+    int sock, msgSize = (sizeof(char) * 3);
     char message[2 + 1], server_reply[2 + 1];
     int srvV;
 
+    // Conversion du code de poignée de main en chaîne de caractères
     sprintf(message, "%d", S_HANDSHAKE);
 
     printf("En attente du deuxième joueur.\n");
 
+    // Établissement de la connexion avec le serveur
     sock = connexionServeur(port, 1);
-    //Envoi du code de poignée de main
 
+    // Envoi du code de poignée de main
     if (send(sock, message, msgSize, 0) < 0) {
-        puts("Erreur handshake");
+        puts("Erreur de poignée de main");
     }
 
-    //Réception du message de retour du serveur
+    // Réception du message de retour du serveur
     if (recv(sock, server_reply, msgSize, 0) < 0) {
-        puts("Erreur reception reponse serveur");
+        puts("Erreur de réception de la réponse du serveur");
     } else {
         srvV = strtol(server_reply, NULL, 10);
         if (srvV != S_HANDSHAKE) {
             printf("Réponse du serveur (%i)\n", srvV);
         } else {
-            printf("Connecté au second joueur\n");
+            printf("Connecté au deuxième joueur\n");
         }
     }
+
+    // Fermeture de la connexion avec le serveur
     close(sock);
 }
+
 
 /**
  * Attend la connection du client
@@ -677,14 +637,9 @@ int main() {
         other_port = SRV_PORT;
     }
 
-    /*
-     * Initialisation du serveur
-     */
+    //Initialisation du serveur
     InfosServer srv = initialisationServeur(self_port);
 
-    /*
-     * Création de la partie
-     */
     // Génération de la grille
     Plateau plateau = initialisationJeu();
 
@@ -693,19 +648,11 @@ int main() {
 
     // Placement des bateaux
 
-    // COMMENT THIS IF YOU WANT TO DEBUG/TEST THE GAME
     plateau = placerBateau(plateau, "porte avions", B_PORTE_AVION, C_PORTE_AVION);
     plateau = placerBateau(plateau, "croiseur", B_CROISEUR, C_CROISEUR);
     plateau = placerBateau(plateau, "contre-torpilleur", B_CONTRE_TORPILLEUR, C_CONTRE_TORPILLEUR);
     plateau = placerBateau(plateau, "sous-marin", B_SOUS_MARIN, C_SOUS_MARIN);
     plateau = placerBateau(plateau, "torpilleur", B_TORPILLEUR, C_TORPILLEUR);
-
-    // UNCOMMENT THIS IF YOU WANT TO DEBUG/TEST the thing
-    //	plateau = placeShip(plateau, "porte avions", B_PORTE_AVION, C_PORTE_AVION, "a1v");
-    //	plateau = placeShip(plateau, "croiseur", B_CROISEUR, C_CROISEUR, "a2v");
-    //	plateau = placeShip(plateau, "contre-torpilleur", B_CONTRE_TORPILLEUR, C_CONTRE_TORPILLEUR, "a3v");
-    //	plateau = placeShip(plateau, "sous-marin", B_SOUS_MARIN, C_SOUS_MARIN, "a4v");
-    //	plateau = placeShip(plateau, "torpilleur", B_TORPILLEUR, C_TORPILLEUR, "a5v");
 
     printf(" C'est parti !");
 
@@ -742,7 +689,7 @@ int main() {
         }
     }
 
-    fermerApp(srv, 0, "Bye.");
+    fermerApp(srv, 0, "A bientot");
 
     return (EXIT_SUCCESS);
 }
