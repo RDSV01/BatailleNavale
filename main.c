@@ -8,11 +8,11 @@
 
 
 // Rendu de la grille de jeu
-const char line[] = "  0~~~0~~~0~~~0~~~0~~~0~~~0~~~0~~~0~~~0~~~0",
-        EAU[] = "   |",
-        EAU_T[] = COLOR_BLUE " 0 " COLOR_RESET "|",
-        BAT[] = COLOR_GREEN "***" COLOR_RESET "|",
-        BAT_T[] = COLOR_RED "XXX" COLOR_RESET "|";
+const char line[] = "*******************************************",
+        EAU[] = "   *",
+        EAU_T[] = COLOR_BLUE " 0 " COLOR_RESET "*",
+        BAT[] = COLOR_GREEN "***" COLOR_RESET "*",
+        BAT_T[] = COLOR_RED "XXX" COLOR_RESET "*";
 
 typedef struct {
     int socket_desc;
@@ -96,10 +96,10 @@ Plateau initialisationJeu() {
 //Affiche la grille de jeu
 void afficherGrille(int g[BOARD_SIZE][BOARD_SIZE]) {
     int i, j;
-    puts("\n  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10|");
+    puts("\n   1   2   3   4   5   6   7   8   9   10");
     puts(line);  // Afficher la ligne de séparation
     for (i = 0; i < BOARD_SIZE; i++) {
-        printf("%c |", i + 'A');  // Afficher la lettre de la rangée
+        printf("%c ", i + 'A');  // Afficher la lettre de la rangée
         for (j = 0; j < BOARD_SIZE; j++) {
             if ((int) g[i][j] == C_RATE) {  // Raté
                 printf("%s", EAU);
@@ -125,19 +125,16 @@ void afficherGrille(int g[BOARD_SIZE][BOARD_SIZE]) {
 int calcAlive(Plateau p) {
     return p.contreTorpilleur + p.croiseur + p.porteAvion + p.sousMarin + p.torpilleur;
 }
-
 Plateau placerBateau(Plateau p, char nom[], int size, int val) {
     int done, error, i;
     Coordonnees c;
     char pos[4 + 1],  // Coordonnées
-    orientation[10 + 1],
-            reponse;
+    orientation[10 + 1];
 
     afficherGrille(p.grille);
 
-    printf("Pour placer un bateau, tapez la coordonnée verticale (lettre), puis\n"
-           "tapez la coordonnée horizontale (chiffre), puis tapez l'orientation horizontale ou verticale (h ou v)\n\n"
-    );
+    //Pour placer un bateau il faut choisir une coordonnée verticale, puis horizontal et pour finir, l'orientation,
+    //Exemple : a1h
     printf("Veuillez placer le %s (%i cases)\n\n", nom, size);
     do {
         // Réinitialiser les variables
@@ -145,58 +142,82 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
         done = 0;
         strcpy(orientation, "horizontal");
 
-        // Demander les coordonnées
-        printf("Position : ");
+        // Demander la coordonnée verticale
+        printf("Coordonnée verticale (a-j) : ");
         scanf("%s", pos);
+        c.y = pos[0] - 'a';
 
-        c = strToCoord(pos, 1);
-
-        if (c.x < 0 || c.y < 0 || c.x > BOARD_SIZE || c.y > BOARD_SIZE) {
-            puts(" > Coordonnées incorrectes.");
+        if (c.y < 0 || c.y >= BOARD_SIZE) {
+            puts(" > Coordonnée verticale incorrecte.");
             error = 1;
-        } else if (c.d == 'v') {  // Vérification du placement des bateaux
-            strcpy(orientation, "vertical");
-            // Sortie de la carte
-            if (c.y + size > BOARD_SIZE) {
-                printf(" > Impossible de placer le bateau ici. Il sort du cadre. (y=%i)\n", c.y);
+        }
+
+        // Demander la coordonnée horizontale
+        if (error == 0) {
+            printf("Coordonnée horizontale (1-10) : ");
+            scanf("%s", pos);
+            c.x = atoi(pos) - 1;
+
+            if (c.x < 0 || c.x >= BOARD_SIZE) {
+                puts(" > Coordonnée horizontale incorrecte.");
                 error = 1;
-            } else {
-                // Chevauchements
-                for (i = c.y; i < c.y + size; i++) {
-                    if (p.grille[i][c.x] != C_RATE) {
-                        puts(" > Un bateau est déjà ici.");
-                        error = 1;
-                        break;
+            }
+        }
+
+        // Demander l'orientation
+        if (error == 0) {
+            printf("Orientation (h/v) : ");
+            scanf(" %c", &pos[0]);
+            if (pos[0] == 'v' || pos[0] == 'V') {
+                strcpy(orientation, "vertical");
+            } else if (pos[0] != 'h' && pos[0] != 'H') {
+                puts(" > Orientation incorrecte. Veuillez choisir 'h' pour horizontal ou 'v' pour vertical.");
+                error = 1;
+            }
+        }
+
+        // Vérification du placement des bateaux
+        if (error == 0) {
+            if (strcmp(orientation, "vertical") == 0) {
+                // Sortie de la carte
+                if (c.y + size > BOARD_SIZE) {
+                    printf(" > Impossible de placer le bateau ici. Il sort du cadre. (y=%i)\n", c.y);
+                    error = 1;
+                } else {
+                    // Chevauchements
+                    for (i = c.y; i < c.y + size; i++) {
+                        if (p.grille[i][c.x] != C_RATE) {
+                            puts(" > Un bateau est déjà ici.");
+                            error = 1;
+                            break;
+                        }
                     }
                 }
-            }
-        } else if (c.x + size > BOARD_SIZE) {
-            printf(" > Impossible de placer le bateau ici. Il sort du cadre. (x=%i)\n", c.x);
-            error = 1;
-        } else {
-            // Chevauchements
-            for (i = c.x; i < c.x + size; i++) {
-                if (p.grille[c.y][i] != C_RATE) {
-                    puts(" > Un bateau est déjà ici.");
+            } else {  // Orientation horizontale
+                if (c.x + size > BOARD_SIZE) {
+                    printf(" > Impossible de placer le bateau ici. Il sort du cadre. (x=%i)\n", c.x);
                     error = 1;
-                    break;
+                } else {
+                    // Chevauchements
+                    for (i = c.x; i < c.x + size; i++) {
+                        if (p.grille[c.y][i] != C_RATE) {
+                            puts(" > Un bateau est déjà ici.");
+                            error = 1;
+                            break;
+                        }
+                    }
                 }
             }
         }
 
         if (error == 0) {
-            getchar();
-            printf("Placement %s en %c:%i. Valider ce placement ? [o/n] ", orientation, c.y + 'a', c.x + 1);
-            reponse = getchar();
-            if (reponse == 'o' || reponse == 'O') {
-                done = 1;
-            }
+            done = 1;
         }
     } while (done == 0);
 
 
     // Placer le bateau sur la grille
-    if (c.d == 'v') {
+    if (strcmp(orientation, "vertical") == 0) {
         for (i = c.y; i < c.y + size; i++) {
             p.grille[i][c.x] = val;
         }
@@ -207,6 +228,9 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
     }
     return p;
 }
+
+
+
 
 
 //Fermeture des sockets
