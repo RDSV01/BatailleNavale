@@ -76,6 +76,9 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/mnt/c/Users/Raphaël DA SILVA/Desktop/V1 Bataille Navale/definitions.h">
+			<Option target="V1_Bataille_Navale"/>
+		</Unit>
 		<Unit filename="/mnt/c/Users/Raphaël DA SILVA/Desktop/V1 Bataille Navale/main.c">
 			<Option target="V1_Bataille_Navale"/>
 		</Unit>
