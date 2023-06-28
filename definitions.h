@@ -31,8 +31,32 @@
 #define C_TORPILLEUR 50
 #define C_TORPILLEUR_T 51
 
-// Définition des couleurs
-#define COLOR_RED     "\x1b[31m"
-#define COLOR_GREEN   "\x1b[32m"
-#define COLOR_BLUE    "\x1b[34m"
-#define COLOR_RESET   "\x1b[0m"
+// Rendu de la grille de jeu
+const char line[] = "*******************************************",
+        EAU[] = "   *",
+        EAU_TOUCHE[] = " 0 " "*",
+        BAT[] = ")))" "*",
+        BAT_TOUCHE[] = "XXX" "*";
+
+typedef struct {
+    int socket_desc;
+    int client_sock;
+    int c;
+    int read_size;
+    struct sockaddr_in server;
+    struct sockaddr_in client;
+    char client_message[2000];
+
+} InfosServer;
+
+typedef struct {
+    // Cases pour les bateaux
+    int porteAvion, croiseur, contreTorpilleur, sousMarin, torpilleur, points;
+    int grille[BOARD_SIZE][BOARD_SIZE];
+    int grilleEnnemie[BOARD_SIZE][BOARD_SIZE];
+} Plateau;
+
+typedef struct {
+    int x, y;
+    char d;
+} Coordonnees;

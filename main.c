@@ -6,38 +6,66 @@
 #include <unistd.h>
 #include "definitions.h"
 
+//Message de bienvenu
+void bienvenu() {
+    printf("Bienvenu sur le jeu de la Bataile Navale\n");
+}
 
-// Rendu de la grille de jeu
-const char line[] = "*******************************************",
-        EAU[] = "   *",
-        EAU_T[] = COLOR_BLUE " 0 " COLOR_RESET "*",
-        BAT[] = COLOR_GREEN "***" COLOR_RESET "*",
-        BAT_T[] = COLOR_RED "XXX" COLOR_RESET "*";
+//Plateau bataille navale
+Plateau initialisationJeu() {
+    Plateau p;
+    int i, j;
 
-typedef struct {
-    int socket_desc;
-    int client_sock;
-    int c;
-    int read_size;
-    struct sockaddr_in server;
-    struct sockaddr_in client;
-    char client_message[2000];
+    // Initialiser les valeurs des bateaux
+    p.contreTorpilleur = B_CONTRE_TORPILLEUR;
+    p.croiseur = B_CROISEUR;
+    p.porteAvion = B_PORTE_AVION;
+    p.sousMarin = B_SOUS_MARIN;
+    p.torpilleur = B_TORPILLEUR;
+    p.points = 0;
 
-} InfosServer;
+    // Initialiser les grilles
+    for (i = 0; i < BOARD_SIZE; i++) {
+        for (j = 0; j < BOARD_SIZE; j++) {
+            p.grille[i][j] = C_RATE;  // Remplir la grille du joueur avec des cases "raté"
+            p.grilleEnnemie[i][j] = C_RATE;  // Remplir la grille ennemie avec des cases "raté"
+        }
+    }
+    return p;  // Retourner le plateau initialisé
+}
 
-typedef struct {
-    // Cases pour les bateaux
-    int porteAvion, croiseur, contreTorpilleur, sousMarin, torpilleur, points;
-    int grille[BOARD_SIZE][BOARD_SIZE];
-    int grilleEnnemie[BOARD_SIZE][BOARD_SIZE];
-} Plateau;
 
-typedef struct {
-    int x, y;
-    char d;
-} Coordonnees;
+//Affiche la grille de jeu
+void afficherGrille(int g[BOARD_SIZE][BOARD_SIZE]) {
+    int i, j;
 
-Coordonnees strToCoord(char string[], int hasDirection) {
+    // Afficher l'en-tête des colonnes
+    puts("\n   1   2   3   4   5   6   7   8   9   10");
+    puts(line);  // Afficher la ligne de séparation
+
+    for (i = 0; i < BOARD_SIZE; i++) {
+        printf("%c ", i + 'A');  // Afficher la lettre de la rangée
+
+        for (j = 0; j < BOARD_SIZE; j++) {
+            if ((int) g[i][j] == C_RATE) {  // Case d'eau non touchée
+                printf("%s", EAU);
+            } else if (g[i][j] == C_RATE_T) {  // Case d'eau touchée
+                printf("%s", EAU_TOUCHE);
+            } else if (g[i][j] == C_PORTE_AVION || g[i][j] == C_CROISEUR || g[i][j] == C_CONTRE_TORPILLEUR || g[i][j] == C_SOUS_MARIN || g[i][j] == C_TORPILLEUR) {
+                // Case contenant un bateau non touché
+                printf("%s", BAT);
+            } else {
+                // Case contenant un bateau touché
+                printf("%s", BAT_TOUCHE);
+            }
+        }
+
+        printf("\n");
+        puts(line);  // Afficher la ligne de séparation
+    }
+}
+
+Coordonnees Coordo(char string[], int hasDirection) {
     Coordonnees c;  // Structure pour stocker les coordonnées
     char strX[2 + 1];  // Chaîne pour stocker la composante X
     int i;
@@ -49,78 +77,22 @@ Coordonnees strToCoord(char string[], int hasDirection) {
         hasDirection = 0;
     }
 
-    // Séparer la chaîne
-    c.y = string[0] - 'a';  // Convertir la composante Y en entier
+    // Convertir la composante Y en entier
+    c.y = string[0] - 'a';
 
-    // Parcourir la chaîne pour extraire la composante X
-    for (i = 0; i < strlen(string)-(1 + hasDirection); i++) {
+    // Extraire la composante X
+    for (i = 0; i < strlen(string) - (1 + hasDirection); i++) {
         strX[i] = string[i + 1];
     }
 
-    // Remplir la chaîne (problème pour obtenir une chaîne propre)
-    for (i + 1; i < strlen(strX); i++) {
-        strX[i] = '\0';
-    }
+    strX[i] = '\0';  // Terminer la chaîne avec un caractère nul
 
-    c.x = strtol(strX, NULL, 10) - 1;  // Convertir la composante X en entier
+    // Convertir la composante X en entier
+    c.x = strtol(strX, NULL, 10) - 1;
 
     return c;  // Retourner les coordonnées
 }
 
-//Message de bienvenu
-void bienvenu() {
-    printf("Bienvenu sur le jeu de la Bataile Navale\n");
-}
-
-//Initialisation du plateau
-Plateau initialisationJeu() {
-    Plateau p;
-    int i, j;
-    p.contreTorpilleur = B_CONTRE_TORPILLEUR;
-    p.croiseur = B_CROISEUR;
-    p.porteAvion = B_PORTE_AVION;
-    p.sousMarin = B_SOUS_MARIN;
-    p.torpilleur = B_TORPILLEUR;
-    p.points = 0;
-
-    for (i = 0; i < BOARD_SIZE; i++) {
-        for (j = 0; j < BOARD_SIZE; j++) {
-            p.grille[i][j] = C_RATE;
-            p.grilleEnnemie[i][j] = C_RATE;
-        }
-    }
-
-    return p;
-}
-
-//Affiche la grille de jeu
-void afficherGrille(int g[BOARD_SIZE][BOARD_SIZE]) {
-    int i, j;
-    puts("\n   1   2   3   4   5   6   7   8   9   10");
-    puts(line);  // Afficher la ligne de séparation
-    for (i = 0; i < BOARD_SIZE; i++) {
-        printf("%c ", i + 'A');  // Afficher la lettre de la rangée
-        for (j = 0; j < BOARD_SIZE; j++) {
-            if ((int) g[i][j] == C_RATE) {  // Raté
-                printf("%s", EAU);
-            } else if (g[i][j] == C_RATE_T) {  // Eau, touché
-                printf("%s", EAU_T);
-            } else if (// Bateau
-                    g[i][j] == C_PORTE_AVION ||
-                    g[i][j] == C_CROISEUR ||
-                    g[i][j] == C_CONTRE_TORPILLEUR ||
-                    g[i][j] == C_SOUS_MARIN ||
-                    g[i][j] == C_TORPILLEUR
-                    ) {
-                printf("%s", BAT);
-            } else {
-                printf("%s", BAT_T);
-            }
-        }
-        printf("\n");
-        puts(line);  // Afficher la ligne de séparation
-    }
-}
 
 int calcAlive(Plateau p) {
     return p.contreTorpilleur + p.croiseur + p.porteAvion + p.sousMarin + p.torpilleur;
@@ -135,7 +107,7 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
 
     //Pour placer un bateau il faut choisir une coordonnée verticale, puis horizontal et pour finir, l'orientation,
     //Exemple : a1h
-    printf("Veuillez placer le %s (%i cases)\n\n", nom, size);
+    printf(">>> Veuillez placer le %s (%i cases)\n\n", nom, size);
     do {
         // Réinitialiser les variables
         error = 0;
@@ -143,35 +115,35 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
         strcpy(orientation, "horizontal");
 
         // Demander la coordonnée verticale
-        printf("Coordonnée verticale (a-j) : ");
+        printf(">>> Coordonnée verticale (a-j) : ");
         scanf("%s", pos);
         c.y = pos[0] - 'a';
 
         if (c.y < 0 || c.y >= BOARD_SIZE) {
-            puts(" > Coordonnée verticale incorrecte.");
+            puts(" >>> Coordonnée verticale incorrecte.");
             error = 1;
         }
 
         // Demander la coordonnée horizontale
         if (error == 0) {
-            printf("Coordonnée horizontale (1-10) : ");
+            printf(">>> Coordonnée horizontale (1-10) : ");
             scanf("%s", pos);
             c.x = atoi(pos) - 1;
 
             if (c.x < 0 || c.x >= BOARD_SIZE) {
-                puts(" > Coordonnée horizontale incorrecte.");
+                puts(" >>> Coordonnée horizontale incorrecte.");
                 error = 1;
             }
         }
 
         // Demander l'orientation
         if (error == 0) {
-            printf("Orientation (h/v) : ");
+            printf(">>> Orientation (h/v) : ");
             scanf(" %c", &pos[0]);
             if (pos[0] == 'v' || pos[0] == 'V') {
                 strcpy(orientation, "vertical");
             } else if (pos[0] != 'h' && pos[0] != 'H') {
-                puts(" > Orientation incorrecte. Veuillez choisir 'h' pour horizontal ou 'v' pour vertical.");
+                puts(" >>> Orientation incorrecte. Veuillez choisir 'h' pour horizontal ou 'v' pour vertical.");
                 error = 1;
             }
         }
@@ -181,13 +153,13 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
             if (strcmp(orientation, "vertical") == 0) {
                 // Sortie de la carte
                 if (c.y + size > BOARD_SIZE) {
-                    printf(" > Impossible de placer le bateau ici. Il sort du cadre. (y=%i)\n", c.y);
+                    printf(" >>> Impossible de placer le bateau ici. Il sort du cadre. (y=%i)\n", c.y);
                     error = 1;
                 } else {
                     // Chevauchements
                     for (i = c.y; i < c.y + size; i++) {
                         if (p.grille[i][c.x] != C_RATE) {
-                            puts(" > Un bateau est déjà ici.");
+                            puts(" >>> Un bateau est déjà ici.");
                             error = 1;
                             break;
                         }
@@ -195,13 +167,13 @@ Plateau placerBateau(Plateau p, char nom[], int size, int val) {
                 }
             } else {  // Orientation horizontale
                 if (c.x + size > BOARD_SIZE) {
-                    printf(" > Impossible de placer le bateau ici. Il sort du cadre. (x=%i)\n", c.x);
+                    printf(" >>> Impossible de placer le bateau ici. Il sort du cadre. (x=%i)\n", c.x);
                     error = 1;
                 } else {
                     // Chevauchements
                     for (i = c.x; i < c.x + size; i++) {
                         if (p.grille[c.y][i] != C_RATE) {
-                            puts(" > Un bateau est déjà ici.");
+                            puts(" >>> Un bateau est déjà ici.");
                             error = 1;
                             break;
                         }
@@ -253,7 +225,7 @@ InfosServer initialisationServeur(int port) {
     // Creation du socket
     is.socket_desc = socket(AF_INET, SOCK_STREAM, 0);
     if (is.socket_desc == -1) {
-        fermerApp(is, 1, "Creation socket impossible.");
+        fermerApp(is, 1, ">>> Creation socket impossible.");
     }
 
     // Création de l'écoute
@@ -263,12 +235,12 @@ InfosServer initialisationServeur(int port) {
 
     // Mise en place de l'écoute
     if (bind(is.socket_desc, (struct sockaddr *) &is.server, sizeof (is.server)) < 0) {
-        fermerApp(is, 1, "Erreur écoute");
+        fermerApp(is, 1, ">>> Erreur écoute");
     }
 
     listen(is.socket_desc, 3);
 
-    printf("Serveur en place (port %i). Attente du client...\n", port);
+    printf(">>> Serveur en place (port %i). Attente du client...\n", port);
     is.c = sizeof (struct sockaddr_in);
 
     return is;
@@ -282,12 +254,11 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
     // Acceptation de la connexion client
     is.client_sock = accept(is.socket_desc, (struct sockaddr *)&is.client, (socklen_t *)&is.c);
     if (is.client_sock < 0) {
-        perror("Connexion refusée");
+        perror(">>> Connexion refusée");
         return 1;
     }
 
-    printf("\n-------------------------------------\n");
-    printf("En attente du tir de l'adversaire.\n");
+    printf(">>> En attente du tir de l'adversaire.\n");
 
     // Définition de la taille maximale des messages
 #define MAX_MESSAGE_SIZE 100
@@ -300,9 +271,9 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
         strncpy(server_response, is.client_message, copy_length);
         server_response[copy_length] = '\0'; // S'assurer que la chaîne est terminée correctement
 
-        printf(COLOR_BLUE " > %s\n\n" COLOR_RESET, is.client_message);
+        printf(  " > %s\n\n"  , is.client_message);
 
-        coup = strToCoord(is.client_message, 0);
+        coup = Coordo(is.client_message, 0);
         content = (*p).grille[coup.y][coup.x];
 
         if (content == C_RATE || content == C_RATE_T) {
@@ -349,12 +320,11 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
             sprintf(server_response, "%d", S_COULE);
         }
 
-        printf("Résultat :\n");
-        printf("----------\n");
+        printf(">>> Résultat :\n");
         afficherGrille((*p).grille);
-        printf(COLOR_BLUE "\nIl vous reste %i points.\n" COLOR_RESET, calcAlive(*p));
+        printf(  "\n>>> Il vous reste %i points.\n"  , calcAlive(*p));
         if (calcAlive(*p) == 0) {
-            printf(COLOR_RED "Plus de bateaux. Perdu..\n" COLOR_RESET);
+            printf(  ">>> Plus de bateaux. Perdu.\n"  );
             sprintf(server_response, "%d", S_PERDU);
         }
 
@@ -368,10 +338,10 @@ int receptionMessageClient(InfosServer is, Plateau *p) {
     }
 
     if (is.read_size == 0) {
-        puts("Déconnexion client");
+        puts(">>> Déconnexion client");
         fflush(stdout);
     } else if (is.read_size == -1) {
-        perror("Erreur réception");
+        perror(">>> Erreur réception");
     }
 
     return status;
@@ -384,7 +354,7 @@ int connexionServeur(int server_port, int wait) {
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
-        printf("Erreur création socket");
+        printf(">>> Erreur création socket");
     }
 
     // Connexion au serveur
@@ -394,7 +364,7 @@ int connexionServeur(int server_port, int wait) {
 
     if (wait == 0) {
         if (connect(sock, (struct sockaddr *) &server, sizeof (server)) < 0) {
-            puts("Serveur inacessible");
+            puts(">>> Serveur inacessible");
             return -1;
         }
     } else {
@@ -415,14 +385,13 @@ int strike(int other_port, Plateau *p) {
     sock = connexionServeur(other_port, 0);
 
     // Interface
-    printf("\nGrille de l'adversaire :\n");
-    printf("------------------------\n");
+    printf("\n >>> Grille de l'adversaire :\n");
     afficherGrille((*p).grilleEnnemie);
-    printf("\nA votre tour !\n");
-    printf("Entrez les coordonnées pour tirer (ex: a1) : ");
+    printf("\n >>> A votre tour !\n");
+    printf(">>> Entrez les coordonnées pour tirer (ex: a1) : ");
     scanf("%3s", message); // Limiter la lecture à 3 caractères
 
-    c = strToCoord(message, 0);
+    c = Coordo(message, 0);
 
     // Envoi de la chaine saisie par l'utilisateur
     if (send(sock, message, strlen(message), 0) < 0) {
@@ -432,37 +401,34 @@ int strike(int other_port, Plateau *p) {
 
     // Réception du message de retour du serveur
     if (recv(sock, server_reply, sizeof(server_reply) - 1, 0) < 0) {
-        puts("Erreur reception reponse serveur");
+        puts(">>> Erreur reception reponse serveur");
         return -1;
     } else {
         server_reply[3] = '\0'; // Ajouter le caractère de fin de chaîne
         srvR = strtol(server_reply, NULL, 10);
-        printf("Résultat :\n");
-        printf("----------\n");
+        printf(">>> Résultat :\n");
 
         switch (srvR) {
             case S_RATE:
-                printf(COLOR_BLUE " > Raté.\n" COLOR_RESET);
+                printf(  " >>> Raté.\n"  );
                 (*p).grilleEnnemie[c.y][c.x] = C_RATE_T;
                 break;
             case S_TOUCHE:
-                printf(COLOR_GREEN " > Touché.\n" COLOR_RESET);
+                printf(  " >>> Touché.\n"  );
                 (*p).grilleEnnemie[c.y][c.x] = C_BAT_T;
                 break;
             case S_COULE:
-                printf(COLOR_GREEN " > Coulé !\n" COLOR_RESET);
+                printf(  " >>> Coulé !\n"  );
                 (*p).grilleEnnemie[c.y][c.x] = C_BAT_T;
                 break;
             case S_TOUCHE_BIS:
-                printf(COLOR_BLUE " Vous avez déjà touché ici.\n" COLOR_RESET);
+                printf(  ">>> Vous avez déjà touché ici.\n"  );
                 break;
             case S_PERDU:
-                printf(COLOR_GREEN);
-                printf("  Vous avez gagné ! Bravo !\n");
-                printf(COLOR_RESET);
+                printf(">>> Vous avez gagné ! Bravo !\n");
                 break;
             default:
-                printf(COLOR_RED " ! Réponse incorrecte. (%i)\n" COLOR_RESET, srvR);
+                printf(  ">>> Réponse incorrecte. (%i)\n"  , srvR);
                 return -1; // Retourner une erreur si la réponse est incompréhensible
         }
 
@@ -479,25 +445,25 @@ void handshake(int port) {
     // Conversion du code de poignée de main en chaîne de caractères
     sprintf(message, "%d", S_HANDSHAKE);
 
-    printf("En attente du deuxième joueur.\n");
+    printf(">>> En attente du deuxième joueur.\n");
 
     // Établissement de la connexion avec le serveur
     sock = connexionServeur(port, 1);
 
     // Envoi du code de poignée de main
     if (send(sock, message, msgSize, 0) < 0) {
-        puts("Erreur de poignée de main");
+        puts(">>> Erreur de poignée de main");
     }
 
     // Réception du message de retour du serveur
     if (recv(sock, server_reply, msgSize, 0) < 0) {
-        puts("Erreur de réception de la réponse du serveur");
+        puts(">>> Erreur de réception de la réponse du serveur");
     } else {
         srvV = strtol(server_reply, NULL, 10);
         if (srvV != S_HANDSHAKE) {
-            printf("Réponse du serveur (%i)\n", srvV);
+            printf(">>> Réponse du serveur (%i)\n", srvV);
         } else {
-            printf("Connecté au deuxième joueur\n");
+            printf(">>> Connecté au deuxième joueur\n");
         }
     }
 
@@ -512,11 +478,11 @@ int attente_handshake(InfosServer is) {
     char resp[2 + 1];
     sprintf(resp, "%d", S_HANDSHAKE);
 
-    printf("En attente du deuxième joueur.\n");
+    printf(">>> En attente du deuxième joueur.\n");
     // Acceptation de la connexion d'un client
     is.client_sock = accept(is.socket_desc, (struct sockaddr *) &is.client, (socklen_t*) & is.c);
     if (is.client_sock < 0) {
-        perror("Connexion refusee");
+        perror(">>> Connexion refusee");
         return 1;
     }
 
@@ -525,7 +491,7 @@ int attente_handshake(InfosServer is) {
         content = strtol(is.client_message, NULL, 10);
         if (content == S_HANDSHAKE) {
             write(is.client_sock, resp, sizeof (int));
-            printf("Connecté au deuxieme joueur.\n");
+            printf(">>> Connecté au deuxieme joueur.\n");
         }
     }
 }
@@ -540,7 +506,7 @@ int main() {
     /*
      * Saisie du type d'instance.
      */
-    printf("Selectionner votre joueur, joueur 1 ou 2 ? [1/2] > ");
+    printf(">>> Selectionner votre joueur, joueur 1 ou 2 ? [1/2] > ");
     scanf("%i", &t);
 
     if (t == 1) {
@@ -557,11 +523,9 @@ int main() {
     // Génération de la grille
     Plateau plateau = initialisationJeu();
 
-    printf("Placement de vos bateaux\n");
-    printf("------------------------\n");
+    printf(">>> Placement de vos bateaux\n");
 
     // Placement des bateaux
-
     plateau = placerBateau(plateau, "porte avions", B_PORTE_AVION, C_PORTE_AVION);
     plateau = placerBateau(plateau, "croiseur", B_CROISEUR, C_CROISEUR);
     plateau = placerBateau(plateau, "contre-torpilleur", B_CONTRE_TORPILLEUR, C_CONTRE_TORPILLEUR);
